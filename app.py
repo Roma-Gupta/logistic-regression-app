@@ -14,6 +14,7 @@ uploaded_file = st.file_uploader("Upload test CSV file (like Titanic_test.csv)",
 
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file)
+    data = data[['Pclass', 'Age', 'SibSp', 'Parch', 'Fare']]
     st.write("Uploaded Data Preview:")
     st.dataframe(data)
 
