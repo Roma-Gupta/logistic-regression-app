@@ -1,40 +1,50 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import pickle
-from sklearn.impute import SimpleImputer
 
-st.title("Titanic Survival Prediction - Logistic Regression")
-
-# Load the model
+# Load trained model
 with open("logistic_model_titanic.pkl", "rb") as file:
     model = pickle.load(file)
 
-uploaded_file = st.file_uploader("Upload test CSV file (like Titanic_test.csv)", type=["csv"])
+# Expected features based on model training
+model_features = ['Pclass', 'Age', 'Fare', 'SibSp', 'Parch', 'Sex_female', 'Sex_male']
 
-if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file)
-    st.write("Uploaded Data Preview:")
-    st.dataframe(data)
+# App UI
+st.title("Titanic Survival Predictor 🚢")
 
-    try:
-        # --- Preprocessing same as training ---
-        # Select required features
-        X = data[['Pclass', 'Sex', 'Age', 'Fare']].copy()
+# User Inputs
+pclass = st.selectbox("Passenger Class (1 = Upper, 2 = Middle, 3 = Lower)", [1, 2, 3])
+age = st.slider("Age", 0, 100, 25)
+fare = st.slider("Fare", 0, 500, 50)
+sibsp = st.number_input("Siblings / Spouses Aboard", 0, 10, 0)
+parch = st.number_input("Parents / Children Aboard", 0, 10, 0)
+sex = st.selectbox("Sex", ['male', 'female'])
 
-        # Encode 'Sex'
-        X['Sex'] = X['Sex'].map({'male': 1, 'female': 0})
+# Convert input to DataFrame
+input_dict = {
+    'Pclass': [pclass],
+    'Age': [age],
+    'Fare': [fare],
+    'SibSp': [sibsp],
+    'Parch': [parch],
+    'Sex': [sex]
+}
+input_df = pd.DataFrame(input_dict)
 
-        # Handle missing values
-        imputer = SimpleImputer(strategy='mean')
-        X_imputed = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
+# One-hot encoding for Sex
+input_df = pd.get_dummies(input_df)
 
-        # Predict
-        predictions = model.predict(X_imputed)
-        data["Prediction"] = predictions
+# Add any missing columns from model_features
+for col in model_features:
+    if col not in input_df.columns:
+        input_df[col] = 0
 
-        st.subheader("Prediction Output")
-        st.dataframe(data)
-    except Exception as e:
-        st.error(f"Error during prediction: {e}")
-else:
-    st.info("Please upload a CSV file to begin prediction.")
+# Reorder columns
+input_df = input_df[model_features]
+
+# Predict
+if st.button("Predict Survival"):
+    prediction = model.predict(input_df)[0]
+    result = "Survived ✅" if prediction == 1 else "Did not survive ❌"
+    st.success(f"Prediction: {result}")
