@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 # Load trained model
-with open("logistic_model_titanic.pkl", "rb") as file:
+with open("logistic_model_titanic_v2.pkl", "rb") as file:
     model = pickle.load(file)
 
 # Expected features based on model training
