@@ -17,27 +17,13 @@ if uploaded_file is not None:
     st.dataframe(raw_data)
 
     try:
-        # === Preprocessing ===
-        df = raw_data[['Pclass', 'Sex', 'Age', 'Fare', 'Embarked']].copy()
+        # Use exactly the features used during training
+        features = ['Pclass', 'Sex', 'Age', 'Fare', 'Embarked', 'SibSp', 'Parch']
+        df = raw_data[features].copy()
 
-        # Encode 'Sex'
-        df['Sex'] = df['Sex'].map({'male': 1, 'female': 0})
-
-        # One-hot encode 'Embarked'
-        df = pd.get_dummies(df, columns=['Embarked'], drop_first=True)
-
-        # Handle missing dummy columns
-        expected_cols = ['Pclass', 'Sex', 'Age', 'Fare', 'Embarked_Q', 'Embarked_S']
-        for col in expected_cols:
-            if col not in df.columns:
-                df[col] = 0
-
-        # Ensure order of columns
-        df = df[expected_cols]
-
-        # Handle NaNs
-        imputer = SimpleImputer(strategy='mean')
-        df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=expected_cols)
+        # Handle missing values
+        imputer = SimpleImputer(strategy='most_frequent')  # in case Embarked/Sex has missing
+        df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=features)
 
         # Predict
         predictions = model.predict(df_imputed)
