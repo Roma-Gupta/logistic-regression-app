@@ -2,35 +2,37 @@ import streamlit as st
 import pandas as pd
 import pickle
 
-# Title
 st.title("🚢 Titanic Survival Prediction App")
 
-# Load the trained model
+# Load trained model
 with open("logistic_model_titanic_v2.pkl", "rb") as file:
     model = pickle.load(file)
 
-# Upload CSV
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
 if uploaded_file is not None:
     try:
-        # ✅ Load and prepare data
         data = pd.read_csv(uploaded_file)
+
+        # ✅ Select only features used in training
         required_features = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare']
         input_data = data[required_features]
 
-        # ✅ Predict only on required features
+        # ✅ Drop rows with missing values
+        input_data = input_data.dropna()
+
+        # Predict
         predictions = model.predict(input_data)
 
-        # ✅ Add predictions back to original data
-        data["Survived Prediction"] = predictions
+        # Merge predictions with original data (only non-NaN rows)
+        data_clean = data.loc[input_data.index]
+        data_clean["Survived Prediction"] = predictions
 
-        # Show prediction
         st.subheader("Prediction Output")
-        st.dataframe(data)
+        st.dataframe(data_clean)
 
-        # Download predictions
-        st.download_button("Download Results", data.to_csv(index=False), "predictions.csv", "text/csv")
+        # Download option
+        st.download_button("Download Results", data_clean.to_csv(index=False), "predictions.csv", "text/csv")
 
     except Exception as e:
         st.error(f"❌ Error during prediction: {e}")
