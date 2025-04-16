@@ -5,35 +5,35 @@ from sklearn.impute import SimpleImputer
 
 st.title("Titanic Survival Prediction - Logistic Regression")
 
-# Load the model pipeline (which includes preprocessor)
+# Load the full pipeline (model + preprocessing)
 with open("logistic_model_titanic_v2.pkl", "rb") as file:
     model = pickle.load(file)
 
 uploaded_file = st.file_uploader("Upload Titanic CSV (like test set)", type=["csv"])
 
 if uploaded_file is not None:
-    raw_data = pd.read_csv(uploaded_file)
+    data = pd.read_csv(uploaded_file)
     st.write("Uploaded Data Preview:")
-    st.dataframe(raw_data)
+    st.dataframe(data)
 
     try:
-        # Use original columns before training
+        # Keep only the raw columns used before training
         features = ['Pclass', 'Sex', 'Age', 'Fare', 'Embarked', 'SibSp', 'Parch']
-        df = raw_data[features].copy()
+        input_data = data[features].copy()
 
-        # Impute missing values (only if pipeline doesn’t already)
+        # Impute missing values (if needed)
         imputer = SimpleImputer(strategy='most_frequent')
-        df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=features)
+        input_data_imputed = pd.DataFrame(imputer.fit_transform(input_data), columns=features)
 
-        # Convert to NumPy array to avoid feature name mismatch
-        X_input = df_imputed.to_numpy()
+        # Convert to numpy array to remove column names (this is the KEY fix!)
+        input_array = input_data_imputed.to_numpy()
 
-        # Predict
-        predictions = model.predict(X_input)
-        raw_data['Prediction'] = predictions
+        # Predict using the pipeline
+        predictions = model.predict(input_array)
 
+        data['Prediction'] = predictions
         st.subheader("Prediction Output")
-        st.dataframe(raw_data)
+        st.dataframe(data)
 
     except Exception as e:
         st.error(f"Error during prediction: {e}")
