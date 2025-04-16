@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import pickle
@@ -18,23 +17,32 @@ if uploaded_file is not None:
     st.dataframe(raw_data)
 
     try:
-        # === Preprocessing: Use only trained features ===
-        X = raw_data[['Pclass', 'Sex', 'Age', 'Fare']].copy()
+        # === Preprocessing ===
+        df = raw_data[['Pclass', 'Sex', 'Age', 'Fare', 'Embarked']].copy()
 
         # Encode 'Sex'
-        X['Sex'] = X['Sex'].map({'male': 1, 'female': 0})
+        df['Sex'] = df['Sex'].map({'male': 1, 'female': 0})
 
-        # Handle missing values
+        # One-hot encode 'Embarked'
+        df = pd.get_dummies(df, columns=['Embarked'], drop_first=True)
+
+        # Handle missing dummy columns
+        expected_cols = ['Pclass', 'Sex', 'Age', 'Fare', 'Embarked_Q', 'Embarked_S']
+        for col in expected_cols:
+            if col not in df.columns:
+                df[col] = 0
+
+        # Ensure order of columns
+        df = df[expected_cols]
+
+        # Handle NaNs
         imputer = SimpleImputer(strategy='mean')
-        X_imputed = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
-
-        # Strip column names if needed
-        X_array = X_imputed.to_numpy()
+        df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=expected_cols)
 
         # Predict
-        predictions = model.predict(X_array)
-
+        predictions = model.predict(df_imputed)
         raw_data['Prediction'] = predictions
+
         st.subheader("Prediction Output")
         st.dataframe(raw_data)
 
