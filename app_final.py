@@ -5,7 +5,7 @@ from sklearn.impute import SimpleImputer
 
 st.title("Titanic Survival Prediction - Logistic Regression")
 
-# Load model
+# Load the model pipeline (which includes preprocessor)
 with open("logistic_model_titanic_v2.pkl", "rb") as file:
     model = pickle.load(file)
 
@@ -17,16 +17,19 @@ if uploaded_file is not None:
     st.dataframe(raw_data)
 
     try:
-        # Use exactly the features used during training
+        # Use original columns before training
         features = ['Pclass', 'Sex', 'Age', 'Fare', 'Embarked', 'SibSp', 'Parch']
         df = raw_data[features].copy()
 
-        # Handle missing values
-        imputer = SimpleImputer(strategy='most_frequent')  # in case Embarked/Sex has missing
+        # Impute missing values (only if pipeline doesn’t already)
+        imputer = SimpleImputer(strategy='most_frequent')
         df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=features)
 
+        # Convert to NumPy array to avoid feature name mismatch
+        X_input = df_imputed.to_numpy()
+
         # Predict
-        predictions = model.predict(df_imputed)
+        predictions = model.predict(X_input)
         raw_data['Prediction'] = predictions
 
         st.subheader("Prediction Output")
