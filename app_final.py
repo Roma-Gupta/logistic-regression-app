@@ -41,7 +41,7 @@ if uploaded_file is not None:
         df_imputed = imputer.fit_transform(df)  # ✅ Output is NumPy array — NO column names
 
         # Step 7: Predict
-        predictions = model.predict(df_imputed)
+        predictions = model.predict(input_data)
         data['Prediction'] = predictions
 
         st.subheader("Prediction Output")
