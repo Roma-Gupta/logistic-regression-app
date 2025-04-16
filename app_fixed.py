@@ -3,48 +3,34 @@ import pandas as pd
 import numpy as np
 import pickle
 
-# Load trained model
+# Title
+st.title("🚢 Titanic Survival Prediction App")
+
+# Load the trained model
 with open("logistic_model_titanic_v2.pkl", "rb") as file:
     model = pickle.load(file)
 
-# Expected features based on model training
-model_features = ['Pclass', 'Age', 'Fare', 'SibSp', 'Parch', 'Sex_female', 'Sex_male']
+# File uploader
+uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
-# App UI
-st.title("Titanic Survival Predictor 🚢")
+if uploaded_file is not None:
+    try:
+        data = pd.read_csv(uploaded_file)
 
-# User Inputs
-pclass = st.selectbox("Passenger Class (1 = Upper, 2 = Middle, 3 = Lower)", [1, 2, 3])
-age = st.slider("Age", 0, 100, 25)
-fare = st.slider("Fare", 0, 500, 50)
-sibsp = st.number_input("Siblings / Spouses Aboard", 0, 10, 0)
-parch = st.number_input("Parents / Children Aboard", 0, 10, 0)
-sex = st.selectbox("Sex", ['male', 'female'])
+        # ✅ Select only required features (ignore extra columns)
+        required_features = ['Pclass', 'Age', 'SibSp', 'Parch', 'Fare']
+        input_data = data[required_features]
 
-# Convert input to DataFrame
-input_dict = {
-    'Pclass': [pclass],
-    'Age': [age],
-    'Fare': [fare],
-    'SibSp': [sibsp],
-    'Parch': [parch],
-    'Sex': [sex]
-}
-input_df = pd.DataFrame(input_dict)
+        # Predict
+        predictions = model.predict(input_data)
 
-# One-hot encoding for Sex
-input_df = pd.get_dummies(input_df)
+        # Show prediction next to original data
+        data["Survived Prediction"] = predictions
+        st.subheader("Prediction Output")
+        st.dataframe(data)
 
-# Add any missing columns from model_features
-for col in model_features:
-    if col not in input_df.columns:
-        input_df[col] = 0
+        # Download button
+        st.download_button("Download Results", data.to_csv(index=False), "predictions.csv", "text/csv")
 
-# Reorder columns
-input_df = input_df[model_features]
-
-# Predict
-if st.button("Predict Survival"):
-    prediction = model.predict(input_df)[0]
-    result = "Survived ✅" if prediction == 1 else "Did not survive ❌"
-    st.success(f"Prediction: {result}")
+    except Exception as e:
+        st.error(f"❌ Error during prediction: {e}")
